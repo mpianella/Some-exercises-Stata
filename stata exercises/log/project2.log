@@ -1,0 +1,166 @@
+------------------------------------------------------------------------------------------------------------------
+      name:  <unnamed>
+       log:  C:\Users\Matteo\Desktop\RESEARCH_POSITIONS\DOCUMENTS\stata\log/project2.log
+  log type:  text
+ opened on:  15 Oct 2020, 17:36:59
+
+. 
+. use "./dta/grade5.dta", clear
+
+. 
+. 
+. * solution to question 4
+. ssc install binscatter, replace
+checking binscatter consistency and verifying not already installed...
+all files already exist and are up to date.
+
+. 
+. *4a)
+. binscatter classize school_enrollment if inrange(school_enrollment, 20, 60), rd(40.5) discrete line(qfit) // Thi
+> s draws binned scatter plot with size of the class on the y-axis and number of people enrolled in the school on 
+> the x-axis. A quadratic regression line fits better the data.
+
+. graph export ./png/classize_schoolenrollment.png, replace
+(file ./png/classize_schoolenrollment.png written in PNG format)
+
+. 
+. *4b) 
+. binscatter avgmath school_enrollment if inrange(school_enrollment, 20, 60), rd(40.5) discrete line(lfit) savegra
+> ph(./gph/avgmath.gph) replace //binned scatter plot with average score in the math test on the y-axis and the nu
+> mber of people enrolled in the school on the x-axis.  
+(file ./gph/avgmath.gph saved)
+
+. binscatter avgverb school_enrollment if inrange(school_enrollment, 20, 60), rd(40.5) discrete line(lfit) savegra
+> ph(./gph/avgverb.gph) replace // the same for the verbal test
+(file ./gph/avgverb.gph saved)
+
+. graph combine ./gph/avgmath.gph ./gph/avgverb.gph
+
+. graph export ./png/avgmath_verb_schoolenrollment.png, replace
+(file ./png/avgmath_verb_schoolenrollment.png written in PNG format)
+
+. 
+. *4c)
+. binscatter disadvantaged school_enrollment if inrange(school_enrollment, 20, 60), rd(40.5) discrete line(qfit) s
+> avegraph(./gph/disadvantaged.gph) replace // binned scatter plot with the percentage of disadvantages students o
+> n the y-axis and number of people enrolled in the school on the x-axis
+(file ./gph/disadvantaged.gph saved)
+
+. 
+. binscatter religious school_enrollment if inrange(school_enrollment, 20, 60), rd(40.5) discrete line(lfit) saveg
+> raph(./gph/religious.gph) replace //binned scatter plot with the fraction of religious schools on the y-axis and
+>  number of people enrolled in the school on the x-axis
+(file ./gph/religious.gph saved)
+
+. 
+. binscatter female school_enrollment if inrange(school_enrollment, 20, 60), rd(40.5) discrete line(lfit) savegrap
+> h(./gph/female.gph) replace //binned scatter plot with the fraction of female students on the y-axis and number 
+> of people enrolled in the school on the x-axis
+(file ./gph/female.gph saved)
+
+. 
+. graph combine ./gph/disadvantaged.gph ./gph/religious.gph ./gph/female.gph
+
+. graph export ./png/disadvantaged_religious_female_enrollment.png, replace
+(file ./png/disadvantaged_religious_female_enrollment.png written in PNG format)
+
+. 
+. *4d)
+. 
+. preserve
+
+. 
+. collapse (mean) school_enrollment, by(schlcode) // collapse the dataset to the mean school enrollement for each 
+> school
+
+. 
+. twoway (histogram school_enrollment if inrange(school_enrollment,20,60), discrete frequency), xline(40.5) // sho
+> w  the frequency enrollements 
+
+. graph export ./png/school_distribution.png, replace
+(file ./png/school_distribution.png written in PNG format)
+
+. 
+. restore 
+
+. 
+. *5)
+. * this generates an indicator variable for school_enrollment being above 40
+. gen above40 = 0 
+
+. replace above40 = 1 if school_enrollment>40
+(1,724 real changes made)
+
+. 
+. *this generates a variable with value school_enrollment - 40
+. gen x = school_enrollment - 40
+
+. 
+. *this generates the interaction term between the previous two vbs
+. gen x_above40 = x*above40
+
+. 
+. *we run a regression clustering by schools. We do this because the residuals may not be independent within each 
+> school.
+. foreach v of varlist classize avgmath avgverb {
+  2. reg `v' above40 x x_above40 if inrange(school_enrollment, 0, 80), cluster(schlcode)
+  3. }
+
+Linear regression                               Number of obs     =      1,180
+                                                F(3, 730)         =     447.68
+                                                Prob > F          =     0.0000
+                                                R-squared         =     0.5411
+                                                Root MSE          =     4.4701
+
+                             (Std. Err. adjusted for 731 clusters in schlcode)
+------------------------------------------------------------------------------
+             |               Robust
+    classize |      Coef.   Std. Err.      t    P>|t|     [95% Conf. Interval]
+-------------+----------------------------------------------------------------
+     above40 |  -11.00075    1.18299    -9.30   0.000    -13.32322    -8.67828
+           x |   .6725232   .0569927    11.80   0.000     .5606341    .7844122
+   x_above40 |  -.3417826   .0602566    -5.67   0.000    -.4600794   -.2234857
+       _cons |   33.04583   1.133772    29.15   0.000     30.81999    35.27168
+------------------------------------------------------------------------------
+
+Linear regression                               Number of obs     =      1,180
+                                                F(3, 730)         =       8.45
+                                                Prob > F          =     0.0000
+                                                R-squared         =     0.0323
+                                                Root MSE          =     9.9162
+
+                             (Std. Err. adjusted for 731 clusters in schlcode)
+------------------------------------------------------------------------------
+             |               Robust
+     avgmath |      Coef.   Std. Err.      t    P>|t|     [95% Conf. Interval]
+-------------+----------------------------------------------------------------
+     above40 |   3.428896   1.612143     2.13   0.034     .2639069    6.593886
+           x |   -.192629   .0817787    -2.36   0.019    -.3531785   -.0320795
+   x_above40 |    .298097   .0900022     3.31   0.001     .1214031     .474791
+       _cons |   60.82845     1.3658    44.54   0.000     58.14709    63.50982
+------------------------------------------------------------------------------
+
+Linear regression                               Number of obs     =      1,180
+                                                F(3, 730)         =       4.49
+                                                Prob > F          =     0.0039
+                                                R-squared         =     0.0181
+                                                Root MSE          =     8.3873
+
+                             (Std. Err. adjusted for 731 clusters in schlcode)
+------------------------------------------------------------------------------
+             |               Robust
+     avgverb |      Coef.   Std. Err.      t    P>|t|     [95% Conf. Interval]
+-------------+----------------------------------------------------------------
+     above40 |   2.628131   1.497048     1.76   0.080    -.3109008    5.567164
+           x |  -.1643771   .0772686    -2.13   0.034    -.3160722   -.0126821
+   x_above40 |   .2258534   .0830446     2.72   0.007     .0628187    .3888881
+       _cons |   69.82073   1.298142    53.79   0.000     67.27219    72.36926
+------------------------------------------------------------------------------
+
+. 
+. log close 
+      name:  <unnamed>
+       log:  C:\Users\Matteo\Desktop\RESEARCH_POSITIONS\DOCUMENTS\stata\log/project2.log
+  log type:  text
+ closed on:  15 Oct 2020, 17:37:45
+------------------------------------------------------------------------------------------------------------------

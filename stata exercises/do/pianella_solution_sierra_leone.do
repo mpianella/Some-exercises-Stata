@@ -55,7 +55,7 @@ by village second_choice_cand: egen second_choice_count = count(second_choice_ca
 collapse (mean) second_choice_count, by (village second_choice_cand)
 rename second_choice_cand candidate
 
-merge 1:1 village  candidate using "C:\Users\Matteo\Desktop\RESEARCH_POSITIONS\from_Daniel\Helemo\pianella_solution\dta\first_choice_count.dta"
+merge 1:1 village  candidate using ".\dta\first_choice_count.dta"
 
 replace first_choice_count= 0 if first_choice_count==.
 replace second_choice_count=0 if second_choice_count==.
